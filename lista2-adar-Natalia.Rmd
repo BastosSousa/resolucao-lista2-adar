@@ -472,6 +472,7 @@ h_tmax <- c(which(tar_est1 %in% max(tar_est1))-1, which(tar_est2 %in% max(tar_es
 #h_tmax
 ```
 ```{r}
+arg1 <-c()
 for (i in 1:24){
   if (h[i] < h_tmin[1]){
       arg1[i] <- c(pi*((h[i]+10)/(10+h_tmin[1])))  
@@ -491,8 +492,308 @@ ar3
 ar2 <- arg1[(h_tmin[1]+1):(h_tmax[1]+1)]
 ar2
 
+ar4 <- arg1[-((h_tmin[2]+1):(h_tmax[2]+1))]
+ar4
+
+ar5 <- arg1[(h_tmin[2]+1):(h_tmax[2]+1)]
+ar5
 
 ```
+```{r}
+Tcal_i <- T_barra[1] - A[1]*cos(ar3)
+Tcal_i2 <- T_barra[1] - A[1]*cos(ar2)
+
+Tcal_i3 <- T_barra[2] - A[2]*cos(ar4)
+Tcal_i4 <- T_barra[2] - A[2]*cos(ar5)
+
+
+T_calc_est1 <- c(Tcal_i,Tcal_i2)
+T_calc_est2 <- c(Tcal_i3,Tcal_i4)
+sprintf("Tcalc est 1:")
+T_calc_est1
+sprintf("Tcalc est 2:")
+T_calc_est2
+sprintf("Tmax est 1 e 2:")
+c(max(tar_est1),max(tar_est2))
+sprintf("Tmin est 1 e 2:")
+c(min(tar_est1),min(tar_est2))
+sprintf("h_max est 1 e 2:")
+h_tmax
+sprintf("h_min est 1 e 2:")
+h_tmin
+
+```
+
+b. Calcule o RMSE nos dois casos.
+$RMSE = \sqrt{\frac{1}{n}\sum_{i=1}^{n}\left (T_{calc}-T_{obs} \right )^{2}}$
+
+```{r}
+RMSE_est1 <-sqrt((1/length(tar_est1)*(sum(T_calc_est1-tar_est1)^2)))
+
+RMSE_est2 <-sqrt((1/length(tar_est2)*(sum(T_calc_est2-tar_est2)^2)))
+
+RMSE <- c(RMSE_est1,RMSE_est2)
+
+sprintf("O RMSE da est 1 e 2:")
+RMSE
+```
+C. Calcule a correlação ($r$) nos dois casos. A barra representa a média aritmética. Confira seu resultado com a saída da função cor(tar_obs, tar_calc).
+
+$r = \frac{\sum_{i=1}^{n} (T_{obs}-\bar{T}_{obs})(T_{calc}-\bar{T}_{calc}))}{\sqrt{\sum_{i = 1}^{n} (T_{obs}-\bar{T}_{obs})^{2}(T_{calc}-\bar{T}_{calc})^{2})}}$
+
+```{r}
+
+d4 <- (tar_est1 - mean(tar_est1))^2
+d5 <- (T_calc_est1 - mean(T_calc_est1))^2
+d6 <- sum(d4*d5)
+ 
+
+r_est1 <- sum((tar_est1 - mean(tar_est1))*(T_calc_est1 - mean(T_calc_est1)))/sqrt(d6)
+r_est1
+
+
+d1 <- (tar_est2 - mean(tar_est2))^2
+d2 <- (T_calc_est2 - mean(T_calc_est2))^2
+d3 <- sum(d1*d2)
+  
+r_est2 <- sum((tar_est2 - mean(tar_est2))*(T_calc_est2 - mean(T_calc_est2)))/sqrt(d3)
+r_est2
+
+r2 <- cor(tar_est1, T_calc_est1)
+r2
+r3 <- cor(tar_est2, T_calc_est2)
+r3
+```
+R: O resultado é maior do que o dado pela função cor()
+
+
+11. Os dados abaixo são de precipitação horária de um evento severo ocorrido em 03/12/2012 em Santa Maria-RS.
+```{r}
+d <- cbind(hora=hora <-c(9,10,11,12,13,14,15,16,17,18,19,20,21), prec = prec<- c(0.0,0.0,0.0,0.0,0.0,0.0,0.0,21.4,41.2,2.6,1.0,0.4,0.0))
+# at most 4 decimal places
+knitr::kable(d, digits = 4)
+```
+
+a. Como seria o código para determinar a soma cumulativa da precipitação horária? Salve o resultado em um vetor chamado prec_acum. Interprete o resultado de c(NA, diff(prec_acum)).
+
+```{r}
+prec_acum <- cumsum(prec)
+prec_acum
+
+c(NA, diff(prec_acum))
+
+```
+
+R: o comando c(NA, diff(prec_acum)), realiza a subtração entre elementos do vetor prec_acum, contudo no primeiro como não tem um elemento anterior a subtração não existe e é dada o valor NA.
+
+b. Mostre o código para encontrar o horário de ocorrência da precipitação máxima?
+
+```{r}
+prec_max <- max(prec)
+sprintf("Precipitacao maxima:")
+prec_max
+
+posi_prec_max <- which(prec %in% prec_max)
+sprintf("posicao:")
+posi_prec_max
+
+h_prec_max <- hora[posi_prec_max]
+sprintf("hora da prec max:")
+h_prec_max
+
+```
+
+c. Mostre o código para obter a hora de início e fim do evento de precipitação severa. Qual foi a duração do evento?
+
+```{r}
+prec_sev <- c()
+for (i in 2:length(prec)){
+  if (prec[i] > prec[i-1]){
+      prec_sev[i-1] <- prec[i]
+  }
+  prec_sev
+}
+
+prec_sev_valores <- prec_sev[!is.na(prec_sev)]
+posi_prec_sev <- which(prec %in% prec_sev_valores)
+h_prec_sev <- hora[posi_prec_sev]
+sprintf("hora de início: %#.f h e hora de fim: %#.f h", h_prec_sev[1], h_prec_sev[length(h_prec_sev)]+1)
+
+duracao <- h_prec_sev[length(h_prec_sev)]+1 - h_prec_sev[1]
+
+sprintf("Durcao do evento: %#.f h", duracao)
+
+```
+
+d. Qual foi a precipitação total do evento? Quanto da precipitação total do evento, em %, ocorreu até às 17 h?
+
+```{r}
+
+prec_evev_total <- sum(prec_sev_valores)
+sprintf("Precipitacao total durante o evento: %#.f mm", prec_evev_total)
+
+porcent <- 100*(prec_sev_valores[1]/prec_evev_total)
+
+sprintf("Porcentagem da precipitacao total do evento antes das 17h: %#.f '%%'", porcent)
+```
+
+12. Considere o vetor x definido pelos números descritos abaixo. Mostre como encontrar o primeiro número positivo localizado após o último número negativo. Por exemplo, seja o vetor z definido pelos valores (11, 10, 15, 2, 6, -15, -10, -22, -8, 5, 7, 2, 12, 8, 4, 1, 3, -3, -1, 30, 14). Os valores selecionados seriam 5 e 30.
+
+```{r}
+valores <- c(11, 10, 15, 2, 6, -15, -10, -22, -8, 5, 7, 2, 12, 8, 4, 1, 3, -3, -1, 30, 14)
+vector_12 <- c()
+
+for (i in 1:length(valores)){
+  if (valores[i] < 0 & valores[i+1] >0 ){
+      vector_12[i] <- valores[i+1]
+  }
+  vector_12
+}
+
+vector_12 <- vector_12[!is.na(vector_12)]
+vector_12
+```
+13. Considerando o vetor prec com valores de precipitação diária indicado abaixo. Escreva o código para resolver as seguintes tarefas.
+
+```{r}
+prec <- c(
+  0, 0, 0, 0.8, 0, 0.01, 0.75, 0,
+  0, 0, 0, 0.35, 0.08, 0, 0, 0, 0, 0.31, 0, 3.57, 12.17, 0, 0,
+  0, 0.04, 3.16, 0, 0.95, 0.79, 0, 0, 0, 0, 0, 3.51, 0, 0, 0.16,
+  0, 0, 8.16, 0.54, 4.39, 1.24, 0, 0, 0, 0, 0, 2.43, 0, 0, 0, 0,
+  0, 7.18, 0, 0, 0.26, 0, 0, 0.28, 0, 0, 0.09, 0.38, 0, 0, 0, 0,
+  0, 0, 0.51, 0, 0, 0, 0, 0, 0, 0.67, 0, 0, 0, 0, 0.15, 0, 0.82,
+  0, 0, 0, 0, 0, 0, 0, 0, 0.37, 0, 0.58, 4.95, 0, 0, 0, 0, 0, 7.68,
+  0, 0, 0.37, 0, 1.56, 0, 0, 0, 0.34, 0.48, 0, 4.21, 2.28, 4.3,
+  0, 3.38, 0, 0, 0, 0, 7.28, 0, 4.89, 3.91, 0, 0, 0, 0, 0, 0, 2.93,
+  0, 2.49, 0.77, 0, 2.9, 3.53, 0.83, 0, 0, 0, 0.94, 0.59, 0, 0,
+  0, 0, 0.04, 0, 0.65, 0, 0, 0, 6.23, 0.09, 0, 0.66, 0, 0, 0, 4.42,
+  0, 0, 0, 0.84, 0, 0, 0, 0, 0, 0.09, 0, 0, 0.08, 0, 0.66, 0, 0,
+  0, 0.06, 0, 0, 0, 3.28, 0, 0.8, 5.69, 0.8, 0
+)
+```
+
+a. Quantos dias ocorreram no intervalo 0 < prec < 0.25?
+
+```{r}
+
+intervalo_a <- length(prec[0<prec & prec<0.25])
+sprintf("Dias em que ocorreram 0 < prec < 0.25: %#.f dias",intervalo_a)
+
+```
+
+b. Substitua os valores de chuva registrados no intervalo 0 < prec < 0.25 por 0.
+
+```{r}
+
+prec_2 <- replace(prec, 0<prec & prec<0.25, 0)
+prec_2
+
+```
+
+c. Crie um vetor denominado prec01 indicando o estado da precipitação (chuvoso = 1, seco = 0) baseado no limiar de 0.25 mm para detecção de chuva pelo pluviômetro.
+
+```{r}
+prec01 <- c()
+prec_a <- replace(prec, 0.25 < prec,1)
+prec_b <- replace(prec_a, 0.25 > prec_a,0)
+prec01 <- prec_b
+prec_b
+
+chuvoso <- replace(prec_b, prec_b==1,"chuvoso")
+seco <- replace(chuvoso, chuvoso==0,"seco")
+prec_b_2 <- seco
+
+```
+d. Qual a probabilidade de chuva dessa série de precipitação diária?
+
+```{r}
+options(digits = 4) 
+sprintf("Frequencia de evento seco (0)  e chuvoso (1):")
+table(prec_b)
+probabilidade_1 <- (length(prec_b[prec_b==1])/length(prec_b))*100
+
+sprintf("probabilidade_1 de evento chuvoso (1): %#.2f %%",probabilidade_1)
+
+```
+e. Qual a probabilidade de chover dois dias consecutivos (p11)? Calcule a probabilidade de chover em qualquer um de dois dias consecutivos (p01 + p10)?
+
+```{r}
+p11 <- c()
+p01 <- c()
+p10 <- c()
+vector_p11 <- c()
+vector_p10 <- c()
+vector_p01 <- c()
+
+for (i in 1:length(prec_b)){
+  if (prec_b[i] == 1 & prec_b[i+1]==1){
+       vector_p11[i] <- 1
+  }else if(prec_b[i] == 1 & prec_b[i+1]==0){
+       vector_p10[i] <- 1
+  }
+}
+
+for (i in 1:length(prec_b)){
+    if(prec_b[i] == 1){ 
+           vector_p01[i] <- 1
+    }
+}
+
+
+p11 <- (sum(vector_p11[!is.na(vector_p11)])/length(prec_b))*100
+sprintf("probabilidade de evento p11: %#.2f %%",p11)
+p10 <- (sum(vector_p10[!is.na(vector_p10)])/length(prec_b))*100
+p01 <- (sum(vector_p01[!is.na(vector_p01)])/length(prec_b))*100
+
+sprintf("probabilidade de evento p10+p01: %#.2f %%",p10+p01)
+
+```
+f. Determine a duração de cada evento chuvoso (número de dias consecutivos).
+
+```{r}
+
+
+```
+
+14. Dado o vetor dados mostrado abaixo.
+
+```{r}
+dados <- c(
+  NA, NA, 27L, 7L, 4L, 0L, 26L, 15L, 25L, NA, NA, NA, NA, 6L,
+  29L, 18L, 17L, 23L, 20L, 1L, 30L, 13L, NA, NA, NA, NA, NA, NA,
+  NA, 19L
+)
+```
+a. Como você pode codificar a obtenção de um vetor com zeros nos valores válidos e com números sequenciais dentro das falhas?
+
+b. Como a partir do vetor resultante do item anterior você pode obter um vetor cujo os valores dentro das falhas indique a ordem de ocorrência da falha.
+
+c. Qual o código para determinar o tamanho de cada falha?
+
+d. Como determinar o tamanho da maior falha?
+
+
+15.Para os valores de velocidade ($V_h$) e a direção do vento ($\theta$) (na convenção meteorológica):
+
+$V_h$ = (10, 10, 10, 10, 14.142, 14.142, 14.142, 14.142, 0)
+$\theta$ = (270, 180, 360, 90, 225, 315, 135, 45, 0)
+
+a. Determine as componentes zonal e meridional do vento.
+
+$u = -V_{h} \cdot sin(\theta_{rad})$
+$v = -V_{h} \cdot cos(\theta_{rad})$
+
+b. Faça os cálculos necessários para reconstruir $V_h$ e $\theta$ a partir de $u$ e $v$ determinados no item a. Por convenção, a direção do vento $θ$ em condições calmas ($V_h$ <0.5 ms^-1) é assumida como 0°.
+
+$V_{h} = \sqrt{(u^2 + v^2)}$
+$\theta_{mat} = {\rm atan2}(-u, -v)\cdot\frac{180}{\pi}$
+$\theta = \left\{\begin{matrix}
+\theta_{mat} + 360 & se & \theta_{mat} < 0 \\ 
+0 & se & u = 0,\:  v = 0 \: \:  ou \: \:  V_{h} < 0.5\\
+\end{matrix}\right.$
+ 
+A tabela abaixo apresenta o resultado esperado para as variáveis derivadas.
 
 
 
