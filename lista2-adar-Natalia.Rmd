@@ -752,8 +752,12 @@ sprintf("probabilidade de evento p10+p01: %#.2f %%",p10+p01)
 f. Determine a duração de cada evento chuvoso (número de dias consecutivos).
 
 ```{r}
-
-
+y <- rle(prec_b)
+dias <- y$lengths[y$values==1]
+sufx<- c(1:length(dias))
+evento <- paste0("evento",sufx)
+duracao <- cbind(evento, dias)  
+duracao
 ```
 
 14. Dado o vetor dados mostrado abaixo.
@@ -767,11 +771,42 @@ dados <- c(
 ```
 a. Como você pode codificar a obtenção de um vetor com zeros nos valores válidos e com números sequenciais dentro das falhas?
 
+```{r}
+
+dados_2 <- replace(dados,is.na(dados), 1)
+dados_2
+
+```
+
 b. Como a partir do vetor resultante do item anterior você pode obter um vetor cujo os valores dentro das falhas indique a ordem de ocorrência da falha.
+
+```{r}
+dados_3<-c(dados_2)
+count <- 0
+for( i in 1:length(dados_3)){
+    if(dados_3[i]==1){
+        count = count + 1
+        dados_3[i] <- count
+    }
+} 
+dados_3
+
+```
+
 
 c. Qual o código para determinar o tamanho de cada falha?
 
+```{r}
+tamanho_falha <- rle(dados_2)$lengths[rle(dados_2)$values==1]
+tamanho_falha
+```
+
 d. Como determinar o tamanho da maior falha?
+
+```{r}
+maior_falha <- max(tamanho_falha)
+maior_falha
+```
 
 
 15.Para os valores de velocidade ($V_h$) e a direção do vento ($\theta$) (na convenção meteorológica):
@@ -784,6 +819,18 @@ a. Determine as componentes zonal e meridional do vento.
 $u = -V_{h} \cdot sin(\theta_{rad})$
 $v = -V_{h} \cdot cos(\theta_{rad})$
 
+
+```{r}
+Vh <- c(10, 10, 10, 10, 14.142, 14.142, 14.142, 14.142, 0)
+theta <- c(270, 180, 360, 90, 225, 315, 135, 45, 0)
+
+zonal <- round(-Vh *sin(theta*pi/180))
+zonal
+meridional <- round(-Vh *cos(theta*pi/180))
+meridional
+```
+
+
 b. Faça os cálculos necessários para reconstruir $V_h$ e $\theta$ a partir de $u$ e $v$ determinados no item a. Por convenção, a direção do vento $θ$ em condições calmas ($V_h$ <0.5 ms^-1) é assumida como 0°.
 
 $V_{h} = \sqrt{(u^2 + v^2)}$
@@ -794,6 +841,139 @@ $\theta = \left\{\begin{matrix}
 \end{matrix}\right.$
  
 A tabela abaixo apresenta o resultado esperado para as variáveis derivadas.
+```{r}
+knitr::include_graphics("figura15_1.png")
+```
+Dica: ver a figura abaixo.
+
+```{r}
+knitr::include_graphics("figura15.png")
+```
+
+```{r}
+
+Vh_Calu <-sqrt((zonal^2 + meridional^2))
+Vh_Calu
+theta_mat <- atan2(-zonal,-meridional)*180/pi
+theta_mat
+
+(theta_calc <- theta_mat)
+
+for (i in 1: length(theta_calc)){
+   if (theta_mat[i] < 0){
+        theta_calc[i]<- theta_mat[i]+360
+   
+   }
+}
+
+for (i in 1: length(theta_calc)){
+   if (zonal[i]==0 & meridional[i]==0 | (Vh_Calu[i]<0.5)){
+        theta_calc[i] <- 0
+   
+   }
+}
+
+u <- zonal
+v <- meridional
+ws <- Vh_Calu
+wd <- theta
+wd_uv <- theta_calc
+```
+16. Para as séries de prec_obs e prec_sim calcule:
+
+a. A proporção corretamente prevista $PC = \frac{wc+dc}{n}$
+
+b. O índice de sucesso crítico $CSI=\frac{wc}{wc+wi+di}$
+
+Onde $w$ e $dc$ são as previsões corretas de dias úmidos ($prec > 0.25$ mm dia^-1) e secos respectivamente, $wi$ e $di$ são as previsões incorretas de dias úmidos e secos respectivamente. $n°$ é o total de previsões.
+
+
+```{r}
+prec_obs <- c(
+  0, 0, 0, 0.5, 1, 6, 9, 0.2, 1, 0, 0, 0.25,
+  10, 15, 8, 3, 0, 0, 0, 0, 0, 0, 0.25, 0,
+  0, 0, 1, 5, 0, 20, 0, 0, 0, 0, 1, 1,
+  0, 2, 12, 1, 0, 0, 0, 0, 0, 0, 5, 5
+)
+prec_sim <- c(
+  0, 0.2, 0.1, 0, 0, 3, 1, 1, 1, 1, 0, 3,
+  0, 10, 4, 1, 0.3, 0.5, 0.5, 0.5, 0.5, 0, 0.25, 0.25,
+  0.25, 0, 0.5, 3, 0, 5, 0, 0, 0, 0, 0.5, 0,
+  0.25, 0.2, 0, 0.2, 0, 0, 0, 0, 1, 2, 1, 0
+)
+```
+
+a. 
+```{r}
+prec_obs_correta <- prec_obs
+prec_obs_wc <- sum(prec_obs_correta > 0.25)
+prec_obs_dc <- sum(prec_obs_correta == 0)
+
+Pc_prec_obs <-prec_obs_wc + prec_obs_dc/(length(prec_obs_correta))
+Pc_prec_obs
+
+prec_sim_correta <- prec_sim 
+prec_sim_wc <- sum(prec_sim_correta > 0.25)
+prec_sim_dc <- sum(prec_sim_correta == 0)
+
+Pc_prec_sim  <-prec_sim_wc + prec_sim_dc/(length(prec_sim_correta))
+Pc_prec_sim
+
+```
+b. 
+
+```{r}
+prec_obs_wi <- sum(prec_obs_correta > 0)
+prec_obs_di <- sum(prec_obs_correta == 0)
+CSI_prec_obs <- prec_obs_wc/(prec_obs_wc+prec_obs_wi+prec_obs_di)
+CSI_prec_obs
+
+prec_sim_wi <- sum(prec_sim_correta > 0)
+prec_sim_di <- sum(prec_sim_correta == 0)
+CSI_prec_sim <- prec_sim_wc/(prec_sim_wc+prec_sim_wi+prec_sim_di)
+CSI_prec_sim
+
+```
+17. Escreva o código para calcular as estatísticas abaixo, entre os vetores de valores observados (obs) e previstos (prev) por um dado modelo atmosférico, em um dado local.
+
+a. O Viés relativo (%)^[27. Mede a tendência média dos valores previstos (ou simulados) em serem maiores (superestimativa) ou menores (subestiva) que os observados. O valor ótimo é 0, menores valores indicam melhor desempenho. Valores positivos indicam tendência de superestimativa e negativos de subestimativa.↩]
+
+
+$PBIAS = 100\frac{\sum_{i=1}^{n}(Prev_{i}-Obs_{i})}{\sum_{i=1}^{n}(Obs_{i})}$
 
 
 
+b. Coeficente de eficiência de Nash-Sutcliffe (NSE)^[28. NSE é uma estatística normalizada que que determina a magnitude relativa da variância residual (ruído) comparada a variância dos dados medidos (informação). NSE varia de -Inf a 1. Essencialmente, quanto mais próximo a 1, melhor o modelo.↩]
+
+
+$NSE = 1 - \frac{\sum_{i=1}^{n} (Obs_{i}-Sim_{i})^{2}}{\sum_{i = 1}^{n} (Obs_{i}-\bar{Obs}_{i})^{2}}$
+
+
+```{r}
+v_obs <- c(
+  -0.49, 0.27, -0.48, 0.8, -1, 0.1, -1.16,
+  0.58, -1.6, -0.31, 0.45, -0.98, 0.19, 0.73,
+  -0.49, -0.04, -0.11, 0.46, 2.02, -1.05
+)
+v_prev <- c(
+  NA, -0.49, 0.27, -0.48, 0.8, -1, 0.1, -1.16,
+  0.58, -1.6, -0.31, 0.45, -0.98, 0.19, 0.73,
+  -0.49, -0.04, -0.11, 0.46, 2.02
+)
+```
+
+
+a. 
+```{r}
+v_obs[is.na(v_obs)] <- 0
+v_prev[is.na(v_prev)] <- 0
+
+PBIAS <- 100*sum(v_prev-v_obs)/sum(v_obs)
+PBIAS
+
+```
+b. 
+```{r}
+NSE <- 1 - (sum(v_obs-v_prev)^2)/sum((v_obs-mean(v_obs))^2)
+NSE
+```
